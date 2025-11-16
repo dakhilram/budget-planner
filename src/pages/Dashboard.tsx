@@ -52,7 +52,7 @@ export default function Dashboard() {
         {/* Balance Card Pro */}
         <div className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-5 rounded-2xl shadow-md">
           <p className="text-sm opacity-80">Available Balance</p>
-          <p className="text-4xl font-extrabold mt-1">₹ {balance.toFixed(2)}</p>
+          <p className="text-4xl font-extrabold mt-1">$ {balance.toFixed(2)}</p>
           <p className="text-sm mt-2 opacity-90">{trendMsg}</p>
         </div>
 
@@ -60,11 +60,11 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 gap-4">
           <div className="p-4 rounded-2xl shadow-sm border border-green-200 bg-green-50">
             <p className="text-sm text-green-700">Total Income</p>
-            <p className="text-2xl font-bold text-green-600">₹ {totalIncome.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-green-600">$ {totalIncome.toFixed(2)}</p>
           </div>
           <div className="p-4 rounded-2xl shadow-sm border border-red-200 bg-red-50">
             <p className="text-sm text-red-700">Total Expense</p>
-            <p className="text-2xl font-bold text-red-600">₹ {totalExpense.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-red-600">$ {totalExpense.toFixed(2)}</p>
           </div>
         </div>
 
@@ -104,7 +104,7 @@ export default function Dashboard() {
                       t.type === "income" ? "text-green-600" : "text-red-600"
                     }`}
                   >
-                    {t.type === "income" ? "+" : "-"}₹{t.amount}
+                    {t.type === "income" ? "+" : "-"}${t.amount}
                   </p>
                 </div>
               ))}
