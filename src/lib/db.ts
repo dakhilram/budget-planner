@@ -16,13 +16,17 @@ export interface Transaction {
   amount: number;
   note: string;
   category: string;  // 👈 ADD THIS
-  date: string;
+  date: any;
 }
 
 
-// Add new transaction
+import { serverTimestamp } from "firebase/firestore";
+
 export const addTransaction = async (tx: Transaction) => {
-  await addDoc(collection(db, "transactions"), tx);
+  await addDoc(collection(db, "transactions"), {
+    ...tx,
+    date: serverTimestamp(),
+  });
 };
 
 export const deleteTransaction = async (id: string) => {
