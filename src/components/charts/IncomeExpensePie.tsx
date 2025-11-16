@@ -1,4 +1,12 @@
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend
+} from "chart.js";
 import { Pie } from "react-chartjs-2";
+
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 export default function IncomeExpensePie({
   income,
@@ -8,7 +16,7 @@ export default function IncomeExpensePie({
   expense: number;
 }) {
   const data = {
-    labels: ["Income", "Expenses"],
+    labels: ["Income", "Expense"],
     datasets: [
       {
         data: [income, expense],
@@ -19,8 +27,7 @@ export default function IncomeExpensePie({
   };
 
   return (
-    <div className="bg-white p-4 rounded-xl shadow-sm">
-      <h2 className="text-lg font-semibold mb-3">Income vs Expenses</h2>
+    <div className="w-full flex justify-center">
       <Pie data={data} />
     </div>
   );

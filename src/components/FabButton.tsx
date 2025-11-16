@@ -1,14 +1,17 @@
 import { Plus } from "lucide-react";
-import { motion } from "framer-motion";
 
-export default function FabButton({ onClick }: any) {
+export default function FabButton({ onClick }: { onClick: () => void }) {
   return (
-    <motion.button
-      whileTap={{ scale: 0.92 }}
-      className="fixed bottom-24 right-6 bg-black text-white p-4 rounded-full shadow-xl"
+    <button
       onClick={onClick}
+      className="
+        fixed bottom-20 right-6 
+        bg-blue-600 text-white rounded-full 
+        h-14 w-14 flex items-center justify-center shadow-lg 
+        hover:bg-blue-700 active:scale-95 transition-all
+      "
     >
       <Plus size={28} />
-    </motion.button>
+    </button>
   );
 }

@@ -1,36 +1,43 @@
+import {
+  Chart as ChartJS,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend
+} from "chart.js";
 import { Bar } from "react-chartjs-2";
 import { Transaction } from "@/lib/db";
 
-export default function MonthlyBarChart({ transactions }: { transactions: Transaction[] }) {
-  const monthlyTotals: Record<string, number> = {};
+ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
+
+export default function MonthlyBarChart({
+  transactions,
+}: {
+  transactions: any[];
+}) {
+
+  const monthly: Record<string, number> = {};
 
   transactions.forEach((t) => {
-    const month = new Date(t.date).toLocaleString("default", { month: "short" });
-    if (!monthlyTotals[month]) monthlyTotals[month] = 0;
-
-    monthlyTotals[month] += t.type === "income" ? t.amount : -t.amount;
+    const d = t.dateObj;
+    const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+    monthly[key] = (monthly[key] || 0) + (t.type === "expense" ? -t.amount : t.amount);
   });
 
-  const labels = Object.keys(monthlyTotals);
-  const values = Object.values(monthlyTotals);
+  const labels = Object.keys(monthly);
+  const values = Object.values(monthly);
 
-  return (
-    <div className="bg-white p-4 rounded-xl shadow-sm">
-      <h2 className="text-lg font-semibold mb-3">Monthly Overview</h2>
-      <Bar
-        data={{
-          labels,
-          datasets: [
-            {
-              label: "Net",
-              data: values,
-              backgroundColor: values.map((v) =>
-                v >= 0 ? "#22c55e" : "#ef4444"
-              ),
-            },
-          ],
-        }}
-      />
-    </div>
-  );
+  const data = {
+    labels,
+    datasets: [
+      {
+        label: "Net Balance",
+        data: values,
+        backgroundColor: "#3b82f6",
+      },
+    ],
+  };
+
+  return <Bar data={data} />;
 }

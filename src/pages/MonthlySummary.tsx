@@ -1,101 +1,78 @@
 import { useEffect, useState } from "react";
 import { listenToTransactions, Transaction } from "@/lib/db";
-import { categories } from "@/lib/categories";
-import CategoryPieChart from "@/components/charts/CategoryPieChart";
-import TrendLineChart from "@/components/charts/TrendLineChart";
 import PageWrapper from "@/components/PageWrapper";
+import TrendLineChart from "@/components/charts/TrendLineChart";
+
+const normalizeDate = (t: Transaction) => {
+  if (t.date?.seconds) return new Date(t.date.seconds * 1000);
+  return new Date(t.date);
+};
 
 export default function MonthlySummary() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [month, setMonth] = useState(new Date().getMonth()); // 0 = Jan
 
   useEffect(() => {
     const stop = listenToTransactions(setTransactions);
     return () => stop();
   }, []);
 
-  // Filter by month
-  const filtered = transactions.filter((t) => {
-    const d = new Date(t.date);
-    return d.getMonth() === month;
+  const normalized = transactions.map((t) => ({
+    ...t,
+    dateObj: normalizeDate(t),
+  }));
+
+  // Group by month-year
+  const monthlyTotals: Record<string, number> = {};
+  normalized.forEach((t) => {
+    const d = t.dateObj;
+    const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+    const value = t.type === "income" ? t.amount : -t.amount;
+    monthlyTotals[key] = (monthlyTotals[key] || 0) + value;
   });
 
-  // Income / Expense totals
-  const totalIncome = filtered
-    .filter((t) => t.type === "income")
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const totalExpense = filtered
-    .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  // Category totals
-  const categoryTotals: Record<string, number> = {};
-  filtered.forEach((t) => {
-    if (!categoryTotals[t.category]) categoryTotals[t.category] = 0;
-    categoryTotals[t.category] += t.amount;
-  });
-
-  // Top category
-  const topCategoryId =
-    Object.keys(categoryTotals).sort(
-      (a, b) => categoryTotals[b] - categoryTotals[a]
-    )[0] || null;
-
-  const topCategory = categories.find((c) => c.id === topCategoryId);
+  const labels = Object.keys(monthlyTotals).sort();
+  const values = labels.map((k) => monthlyTotals[k]);
 
   return (
     <PageWrapper>
       <div className="p-4 pb-24 space-y-6">
         <h1 className="text-2xl font-bold">Monthly Summary</h1>
 
-        {/* Month Selector */}
-        <select
-          className="p-3 border rounded-xl shadow-sm"
-          value={month}
-          onChange={(e) => setMonth(Number(e.target.value))}
-        >
-          {Array.from({ length: 12 }).map((_, i) => (
-            <option key={i} value={i}>
-              {new Date(2023, i, 1).toLocaleString("default", {
-                month: "long",
-              })}
-            </option>
-          ))}
-        </select>
+        {labels.length === 0 ? (
+          <p className="text-gray-500">No data yet</p>
+        ) : (
+          <>
+            <div className="p-4 bg-white rounded-xl shadow-sm">
+              <h2 className="font-semibold mb-2">Trend</h2>
+              <TrendLineChart dataPoints={values} />
+            </div>
 
-        {/* Income / Expense Cards */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition">
-            <p className="text-gray-500 text-sm">Total Income</p>
-            <p className="text-2xl font-bold text-green-600">
-              ₹ {totalIncome}
-            </p>
-          </div>
+            <div className="p-4 bg-white rounded-xl shadow-sm">
+              <h2 className="font-semibold mb-2">Net Balance Per Month</h2>
 
-          <div className="p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition">
-            <p className="text-gray-500 text-sm">Total Expenses</p>
-            <p className="text-2xl font-bold text-red-600">
-              ₹ {totalExpense}
-            </p>
-          </div>
-        </div>
+              <ul className="space-y-2">
+                {labels.map((label, idx) => (
+                  <li
+                    key={label}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border"
+                  >
+                    <p className="font-medium">
+                      {label.replace("-", "/")}
+                    </p>
 
-        {/* Top Category */}
-        {topCategory && (
-          <div className="p-4 bg-white rounded-xl shadow-sm">
-            <p className="text-gray-500 text-sm">Top Spending Category</p>
-            <p className="text-xl font-semibold mt-1">
-              {topCategory.icon} {topCategory.label}
-            </p>
-          </div>
+                    <p
+                      className={`font-semibold ${
+                        values[idx] >= 0 ? "text-green-600" : "text-red-600"
+                      }`}
+                    >
+                      ₹ {values[idx].toFixed(2)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </>
         )}
-
-        {/* Category Pie Chart */}
-        <CategoryPieChart data={categoryTotals} />
-
-        {/* Trend Line */}
-        <TrendLineChart transactions={filtered} month={month} />
       </div>
     </PageWrapper>
   );

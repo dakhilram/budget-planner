@@ -1,14 +1,7 @@
-import { motion } from "framer-motion";
-
-export default function PageWrapper({ children }: any) {
+export default function PageWrapper({ children }: { children: any }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
-      className="min-h-screen"
-    >
+    <div className="animate-fadeIn min-h-screen bg-gray-100">
       {children}
-    </motion.div>
+    </div>
   );
 }
