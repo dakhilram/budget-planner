@@ -3,10 +3,10 @@ import { Home, History, Settings } from "lucide-react";
 
 export default function BottomNav() {
   const navItems = [
-    { to: "/", label: "Dashboard", icon: <Home size={20} /> },
-    { to: "/history", label: "History", icon: <History size={20} /> },
-    { to: "/summary", label: "Summary", icon: <History size={20} /> },
-    { to: "/settings", label: "Settings", icon: <Settings size={20} /> },
+    { to: "", label: "Dashboard", icon: <Home size={20} /> },
+    { to: "history", label: "History", icon: <History size={20} /> },
+    { to: "summary", label: "Summary", icon: <History size={20} /> },
+    { to: "settings", label: "Settings", icon: <Settings size={20} /> },
   ];
 
   return (
@@ -15,6 +15,7 @@ export default function BottomNav() {
         <NavLink
           key={item.to}
           to={item.to}
+          end={item.to === ""}   // prevents "/" matching all routes
           className={({ isActive }) =>
             `flex flex-col items-center text-xs ${
               isActive ? "text-blue-600 font-semibold" : "text-gray-500"

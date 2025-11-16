@@ -8,12 +8,11 @@ import AddTransactionModal from "./components/AddTransactionModal";
 import { useState } from "react";
 import MonthlySummary from "./pages/MonthlySummary";
 
-
 export default function App() {
   const [open, setOpen] = useState(false);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/budget-planner">   {/* FIXED BASE PATH */}
       {/* Modal */}
       <AddTransactionModal open={open} setOpen={setOpen} />
 
@@ -23,7 +22,6 @@ export default function App() {
         <Route path="/history" element={<History />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/summary" element={<MonthlySummary />} />
-
       </Routes>
 
       {/* Floating Add Button */}
