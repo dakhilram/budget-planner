@@ -12,11 +12,25 @@ export default function Dashboard() {
     return () => stop();
   }, []);
 
-  const totalExpense = transactions
+  // Convert Firestore timestamp or ISO string → JS Date
+  const normalizeDate = (tx: Transaction) => {
+    if (tx.date?.seconds) {
+      return new Date(tx.date.seconds * 1000);
+    }
+    return new Date(tx.date);
+  };
+
+  // Safe values for charts
+  const txWithFixedDates = transactions.map((t) => ({
+    ...t,
+    dateObj: normalizeDate(t),
+  }));
+
+  const totalExpense = txWithFixedDates
     .filter((t) => t.type === "expense")
     .reduce((sum, t) => sum + t.amount, 0);
 
-  const totalIncome = transactions
+  const totalIncome = txWithFixedDates
     .filter((t) => t.type === "income")
     .reduce((sum, t) => sum + t.amount, 0);
 
@@ -46,7 +60,7 @@ export default function Dashboard() {
         <IncomeExpensePie income={totalIncome} expense={totalExpense} />
 
         {/* Monthly Bar Chart */}
-        <MonthlyBarChart transactions={transactions} />
+        <MonthlyBarChart transactions={txWithFixedDates} />
       </div>
     </PageWrapper>
   );
