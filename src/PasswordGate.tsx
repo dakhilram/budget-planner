@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const ACCESS_KEY = "dak_secret_2025";
+const ACCESS_KEY = "dgar";
 const MAX_ATTEMPTS = 3;
 const COOLDOWN_MINUTES = 10;
 const INACTIVITY_MINUTES = 5;
