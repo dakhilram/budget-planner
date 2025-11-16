@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 
-const ACCESS_KEY = "akhil";  // <-- CHANGE THIS
-
+const ACCESS_KEY = "dak_secret_2025"; // Your private key
 const MAX_ATTEMPTS = 3;
 const COOLDOWN_MINUTES = 10;
+const INACTIVITY_MINUTES = 5; // 🔥 Auto-lock after 5 minutes
 
 export default function PasswordGate({ children }) {
   const [authenticated, setAuthenticated] = useState(false);
@@ -15,15 +15,27 @@ export default function PasswordGate({ children }) {
     const storedAuth = localStorage.getItem("authenticated") === "true";
     const storedAttempts = parseInt(localStorage.getItem("failedAttempts") || "0");
     const storedLock = parseInt(localStorage.getItem("lockUntil") || "0");
+    const lastActive = parseInt(localStorage.getItem("lastActive") || "0");
 
     setAuthenticated(storedAuth);
     setFailedAttempts(storedAttempts);
     setLockUntil(storedLock);
+
+    const now = Date.now();
+
+    // ❗ Auto-lock if inactive for more than X minutes
+    if (storedAuth && lastActive) {
+      if (now - lastActive > INACTIVITY_MINUTES * 60 * 1000) {
+        // Auto-lock
+        localStorage.removeItem("authenticated");
+        setAuthenticated(false);
+      }
+    }
   }, []);
 
   const now = Date.now();
 
-  // ⛔ Cooldown logic
+  // ⛔ If locked due to too many failed attempts
   if (lockUntil && lockUntil > now) {
     const minutesLeft = Math.ceil((lockUntil - now) / 60000);
     return (
@@ -38,18 +50,43 @@ export default function PasswordGate({ children }) {
     );
   }
 
-  // 🔐 Authenticated → show full app
-  if (authenticated) return children;
+  // 🔓 Authenticated → render the app + track activity
+  if (authenticated) {
+    // Activity tracking
+    useEffect(() => {
+      const updateActivity = () => {
+        localStorage.setItem("lastActive", String(Date.now()));
+      };
 
+      // Listeners for all interactions
+      window.addEventListener("click", updateActivity);
+      window.addEventListener("keydown", updateActivity);
+      window.addEventListener("mousemove", updateActivity);
+      window.addEventListener("touchstart", updateActivity);
+
+      // Cleanup listeners
+      return () => {
+        window.removeEventListener("click", updateActivity);
+        window.removeEventListener("keydown", updateActivity);
+        window.removeEventListener("mousemove", updateActivity);
+        window.removeEventListener("touchstart", updateActivity);
+      };
+    }, []);
+
+    return <>{children}</>;
+  }
+
+  // 🔐 Handle Login
   const handleSubmit = () => {
     if (password === ACCESS_KEY) {
       localStorage.setItem("authenticated", "true");
       localStorage.setItem("failedAttempts", "0");
+      localStorage.setItem("lastActive", String(Date.now())); // Track new activity
       setAuthenticated(true);
       return;
     }
 
-    // ❌ wrong password
+    // ❌ Wrong password
     const newAttempts = failedAttempts + 1;
     setFailedAttempts(newAttempts);
     localStorage.setItem("failedAttempts", String(newAttempts));
@@ -61,6 +98,7 @@ export default function PasswordGate({ children }) {
     }
   };
 
+  // 🔒 Password Entry Screen
   return (
     <div className="w-full h-screen flex items-center justify-center p-6">
       <div className="max-w-xs w-full border p-6 rounded-xl shadow-md bg-white">
