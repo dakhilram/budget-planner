@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import {
-  getFirestore,
+  initializeFirestore,
   collection,
   addDoc,
   onSnapshot,
@@ -13,7 +13,7 @@ import {
 } from "firebase/firestore";
 
 // ---------------------------------------------
-// FIREBASE CONFIG (YOUR REAL VALUES)
+// FIREBASE CONFIG
 // ---------------------------------------------
 const firebaseConfig = {
   apiKey: "AIzaSyD8umbuBjAV1dEPpNgaW47LRoVdWdLNX4k",
@@ -22,12 +22,23 @@ const firebaseConfig = {
   storageBucket: "budget-planner-4137b.firebasestorage.app",
   messagingSenderId: "231408483708",
   appId: "1:231408483708:web:aeef326f246e5fc3dcb8f9",
-  measurementId: "G-LT22DVX3N5",
+  measurementId: "G-LT22DVX3N5"
 };
 
-// Init Firebase
+// Initialize Firebase app
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+
+// ---------------------------------------------
+// SECURE FIRESTORE INSTANCE WITH SECRET HEADER
+// ---------------------------------------------
+export const db = initializeFirestore(app, {
+  ignoreUndefinedProperties: true,
+  experimentalForceLongPolling: false,
+  experimentalAutoDetectLongPolling: true,
+  headers: {
+    "X-App-Secret": "dak_secret_2025"   // ⭐ SECRET ONLY YOUR APP KNOWS
+  }
+});
 
 // ---------------------------------------------
 // TYPES
@@ -48,12 +59,12 @@ export async function addTransaction(data: Omit<Transaction, "id">) {
   const ref = collection(db, "transactions");
   await addDoc(ref, {
     ...data,
-    date: serverTimestamp(), // 🔥 correct Firestore Timestamp
+    date: serverTimestamp(),  // always save proper Firestore timestamp
   });
 }
 
 // ---------------------------------------------
-// REALTIME LISTENER
+// LISTEN TO ALL TRANSACTIONS
 // ---------------------------------------------
 export function listenToTransactions(
   callback: (items: Transaction[]) => void
@@ -72,7 +83,7 @@ export function listenToTransactions(
 }
 
 // ---------------------------------------------
-// UPDATE TRANSACTION
+// UPDATE
 // ---------------------------------------------
 export async function updateTransaction(id: string, data: Partial<Transaction>) {
   const ref = doc(db, "transactions", id);
@@ -80,7 +91,7 @@ export async function updateTransaction(id: string, data: Partial<Transaction>) 
 }
 
 // ---------------------------------------------
-// DELETE TRANSACTION
+// DELETE
 // ---------------------------------------------
 export async function deleteTransaction(id: string) {
   const ref = doc(db, "transactions", id);
