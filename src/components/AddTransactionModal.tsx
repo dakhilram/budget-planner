@@ -1,93 +1,102 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { addTransaction } from "@/lib/db";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
-export default function AddTransactionModal({
-  open,
-  setOpen,
-}: {
-  open: boolean;
-  setOpen: (v: boolean) => void;
-}) {
+const expenseCategories = [
+  "Food",
+  "Transport",
+  "Shopping",
+  "Bills",
+  "Entertainment",
+  "Other",
+];
+
+const incomeCategories = [
+  "Salary",
+  "Business",
+  "Freelancing",
+  "Gift",
+  "Other",
+];
+
+export default function AddTransactionModal({ open, setOpen }) {
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
-  const [type, setType] = useState<"income" | "expense">("expense");
-  const [category, setCategory] = useState("");
+  const [type, setType] = useState("expense");
+  const [category, setCategory] = useState("Other");
 
-  const handleSubmit = async () => {
-    if (!amount || !note) return;
+  const categories = type === "expense" ? expenseCategories : incomeCategories;
+
+  const handleAdd = async () => {
+    if (!amount || !category) return;
 
     await addTransaction({
-      type,
-      amount: Number(amount),
+      amount: parseFloat(amount),
       note,
+      type,
       category,
+      date: new Date().toISOString(),
     });
 
     setAmount("");
     setNote("");
-    setCategory("");
+    setCategory("Other");
     setType("expense");
     setOpen(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent aria-describedby="add-transaction-description">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Add Transaction</DialogTitle>
         </DialogHeader>
 
-        <div id="add-transaction-description" className="space-y-4">
-          <div>
-            <Label>Amount</Label>
-            <Input
-              type="number"
-              value={amount}
-              placeholder="0.00"
-              onChange={(e) => setAmount(e.target.value)}
-            />
-          </div>
+        <div className="space-y-3">
 
-          <div>
-            <Label>Note</Label>
-            <Input
-              value={note}
-              placeholder="Groceries, Salary..."
-              onChange={(e) => setNote(e.target.value)}
-            />
-          </div>
+          {/* Amount */}
+          <input
+            type="number"
+            placeholder="0.00"
+            className="w-full border rounded-lg p-3"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+          />
 
-          <div>
-            <Label>Category</Label>
-            <Input
-              value={category}
-              placeholder="Food, Travel, Income Source..."
-              onChange={(e) => setCategory(e.target.value)}
-            />
-          </div>
+          {/* Note */}
+          <input
+            type="text"
+            placeholder="Groceries, Rent, Salary…"
+            className="w-full border rounded-lg p-3"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
 
-          <div>
-            <Label>Type</Label>
-            <select
-              className="w-full border rounded p-2"
-              value={type}
-              onChange={(e) => setType(e.target.value as any)}
-            >
-              <option value="expense">Expense</option>
-              <option value="income">Income</option>
-            </select>
-          </div>
+          {/* Type */}
+          <select
+            className="w-full border rounded-lg p-3"
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+          >
+            <option value="expense">Expense</option>
+            <option value="income">Income</option>
+          </select>
 
-          <Button onClick={handleSubmit} className="w-full">
+          {/* Category */}
+          <select
+            className="w-full border rounded-lg p-3"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
+
+          <Button className="w-full" onClick={handleAdd}>
             Add
           </Button>
         </div>
