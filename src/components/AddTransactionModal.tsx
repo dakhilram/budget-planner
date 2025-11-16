@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { addTransaction } from "@/lib/db";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { serverTimestamp } from "firebase/firestore";
 
 const expenseCategories = [
   "Food",
@@ -28,6 +29,17 @@ export default function AddTransactionModal({ open, setOpen }) {
 
   const categories = type === "expense" ? expenseCategories : incomeCategories;
 
+  // 🧹 Reset form when modal closes
+  useEffect(() => {
+    if (!open) {
+      setAmount("");
+      setNote("");
+      setType("expense");
+      setCategory("Other");
+    }
+  }, [open]);
+
+  // ➕ Add transaction
   const handleAdd = async () => {
     if (!amount || !category) return;
 
@@ -36,14 +48,10 @@ export default function AddTransactionModal({ open, setOpen }) {
       note,
       type,
       category,
-      date: new Date().toISOString(),
+      date: serverTimestamp(), // 🔥 FIXED (Firestore timestamp)
     });
 
-    setAmount("");
-    setNote("");
-    setCategory("Other");
-    setType("expense");
-    setOpen(false);
+    setOpen(false); // close modal
   };
 
   return (
