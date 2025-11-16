@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
-import { listenToTransactions, Transaction } from "@/lib/db";
+import { listenToTransactions, Transaction, deleteTransaction } from "@/lib/db";
 import PageWrapper from "@/components/PageWrapper";
+import EditTransactionModal from "@/components/EditTransactionModal";
+import { Pencil, Trash2 } from "lucide-react";
 
 const normalizeDate = (t: Transaction) => {
   if (t.date?.seconds) return new Date(t.date.seconds * 1000);
@@ -9,19 +11,18 @@ const normalizeDate = (t: Transaction) => {
 
 export default function History() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [editItem, setEditItem] = useState<Transaction | null>(null);
 
   useEffect(() => {
     const stop = listenToTransactions(setTransactions);
     return () => stop();
   }, []);
 
-  // Normalize timestamps
   const normalized = transactions.map((t) => ({
     ...t,
     dateObj: normalizeDate(t),
   }));
 
-  // Group by date
   const grouped: Record<string, Transaction[]> = {};
   for (const t of normalized) {
     const dateKey = t.dateObj.toLocaleDateString();
@@ -56,13 +57,29 @@ export default function History() {
                       <p className="text-xs text-gray-500">{t.category}</p>
                     </div>
 
-                    <p
-                      className={`font-semibold ${
-                        t.type === "income" ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {t.type === "income" ? "+" : "-"}₹{t.amount}
-                    </p>
+                    <div className="flex items-center gap-3">
+                      <p
+                        className={`font-semibold ${
+                          t.type === "income" ? "text-green-600" : "text-red-600"
+                        }`}
+                      >
+                        {t.type === "income" ? "+" : "-"}₹{t.amount}
+                      </p>
+
+                      <button
+                        onClick={() => setEditItem(t)}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <Pencil size={18} />
+                      </button>
+
+                      <button
+                        onClick={() => deleteTransaction(t.id)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -70,6 +87,9 @@ export default function History() {
           ))
         )}
       </div>
+
+      {/* Edit Modal */}
+      <EditTransactionModal item={editItem} setItem={setEditItem} />
     </PageWrapper>
   );
 }

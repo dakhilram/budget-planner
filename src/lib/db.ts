@@ -1,56 +1,83 @@
+import { initializeApp } from "firebase/app";
 import {
+  getFirestore,
   collection,
   addDoc,
   onSnapshot,
+  updateDoc,
+  deleteDoc,
+  doc,
   query,
   orderBy,
-  doc,
-  deleteDoc,
-  updateDoc,
-  serverTimestamp,
 } from "firebase/firestore";
 
-import { db } from "@/firebase";
+// ---------------------------------------------
+// FIREBASE CONFIG
+// ---------------------------------------------
+const firebaseConfig = {
+  apiKey: "YOUR_KEY",
+  authDomain: "YOUR_DOMAIN",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_BUCKET",
+  messagingSenderId: "YOUR_SENDER",
+  appId: "YOUR_APPID",
+};
 
+// Init
+const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
+
+// ---------------------------------------------
+// TYPES
+// ---------------------------------------------
 export interface Transaction {
-  id?: string;
-  type: string;
+  id: string;
   amount: number;
   note: string;
+  type: "income" | "expense";
   category: string;
-  date: any;  // Firestore Timestamp
+  date: any;
 }
 
-// Add new transaction
-export const addTransaction = async (tx: Omit<Transaction, "id" | "date">) => {
-  await addDoc(collection(db, "transactions"), {
-    ...tx,
-    date: serverTimestamp(),
-  });
-};
+// ---------------------------------------------
+// ADD TRANSACTION
+// ---------------------------------------------
+export async function addTransaction(data: Omit<Transaction, "id">) {
+  const ref = collection(db, "transactions");
+  await addDoc(ref, data);
+}
 
-// Delete
-export const deleteTransaction = async (id: string) => {
-  const ref = doc(db, "transactions", id);
-  await deleteDoc(ref);
-};
-
-// Update
-export const updateTransaction = async (id: string, data: Partial<Transaction>) => {
-  const ref = doc(db, "transactions", id);
-  await updateDoc(ref, data);
-};
-
-// Listen (Real-Time)
-export const listenToTransactions = (callback: (data: Transaction[]) => void) => {
-  const q = query(collection(db, "transactions"), orderBy("date", "desc"));
+// ---------------------------------------------
+// LISTEN (REALTIME)
+// ---------------------------------------------
+export function listenToTransactions(
+  callback: (items: Transaction[]) => void
+) {
+  const ref = collection(db, "transactions");
+  const q = query(ref, orderBy("date", "desc"));
 
   return onSnapshot(q, (snapshot) => {
-    const data = snapshot.docs.map((d) => ({
+    const list: Transaction[] = snapshot.docs.map((d) => ({
       id: d.id,
       ...d.data(),
     })) as Transaction[];
 
-    callback(data);
+    callback(list);
   });
-};
+}
+
+// ---------------------------------------------
+// UPDATE
+// ---------------------------------------------
+export async function updateTransaction(id: string, data: Partial<Transaction>) {
+  const ref = doc(db, "transactions", id);
+  await updateDoc(ref, data);
+}
+
+// ---------------------------------------------
+// DELETE (NO CONFIRMATION)
+// ---------------------------------------------
+export async function deleteTransaction(id: string) {
+  const ref = doc(db, "transactions", id);
+  await deleteDoc(ref);
+}
