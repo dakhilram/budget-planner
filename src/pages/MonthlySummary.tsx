@@ -65,7 +65,7 @@ export default function MonthlySummary() {
                         values[idx] >= 0 ? "text-green-600" : "text-red-600"
                       }`}
                     >
-                      ₹ {values[idx].toFixed(2)}
+                      $ {values[idx].toFixed(2)}
                     </p>
                   </li>
                 ))}

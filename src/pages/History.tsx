@@ -10,7 +10,7 @@ const normalizeDate = (t: Transaction) => {
   return new Date(t.date);
 };
 
-// Helper: match category id → icon + label
+// Helper: category info
 const getCategoryInfo = (id: string) => {
   return categories.find((c) => c.id === id) || { icon: "", label: id };
 };
@@ -18,6 +18,8 @@ const getCategoryInfo = (id: string) => {
 export default function History() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [editItem, setEditItem] = useState<Transaction | null>(null);
+
+  const [selectedMonth, setSelectedMonth] = useState(""); // "2025-1"
 
   useEffect(() => {
     const stop = listenToTransactions(setTransactions);
@@ -29,8 +31,33 @@ export default function History() {
     dateObj: normalizeDate(t),
   }));
 
+  // ----- GENERATE AVAILABLE MONTH OPTIONS -----
+  const monthKeys: string[] = [];
+  normalized.forEach((t) => {
+    const d = t.dateObj;
+    const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+    if (!monthKeys.includes(key)) monthKeys.push(key);
+  });
+
+  monthKeys.sort(); // chronological order
+
+  // Default month = latest one
+  useEffect(() => {
+    if (monthKeys.length > 0 && !selectedMonth) {
+      setSelectedMonth(monthKeys[monthKeys.length - 1]);
+    }
+  }, [monthKeys]);
+
+  // ----- FILTER TRANSACTIONS BY SELECTED MONTH -----
+  const filtered = normalized.filter((t) => {
+    const d = t.dateObj;
+    const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+    return key === selectedMonth;
+  });
+
+  // ----- GROUP DAILY -----
   const grouped: Record<string, Transaction[]> = {};
-  for (const t of normalized) {
+  for (const t of filtered) {
     const dateKey = t.dateObj.toLocaleDateString();
     if (!grouped[dateKey]) grouped[dateKey] = [];
     grouped[dateKey].push(t);
@@ -45,8 +72,26 @@ export default function History() {
       <div className="p-4 pb-24 space-y-6">
         <h1 className="text-2xl font-bold">History</h1>
 
+        {/* Month Selector */}
+        <select
+          className="border rounded-lg p-3 w-full"
+          value={selectedMonth}
+          onChange={(e) => setSelectedMonth(e.target.value)}
+        >
+          {monthKeys.map((key) => {
+            const [year, month] = key.split("-");
+            const monthName = new Date(parseInt(year), parseInt(month) - 1)
+              .toLocaleString("default", { month: "long" });
+            return (
+              <option key={key} value={key}>
+                {monthName} {year}
+              </option>
+            );
+          })}
+        </select>
+
         {sortedDates.length === 0 ? (
-          <p className="text-gray-500">No transactions yet</p>
+          <p className="text-gray-500">No transactions for this month</p>
         ) : (
           sortedDates.map((date) => (
             <div key={date}>
@@ -54,7 +99,7 @@ export default function History() {
 
               <div className="space-y-2">
                 {grouped[date].map((t) => {
-                  const categoryInfo = getCategoryInfo(t.category);
+                  const cat = getCategoryInfo(t.category);
 
                   return (
                     <div
@@ -64,8 +109,8 @@ export default function History() {
                       <div>
                         <p className="font-medium">{t.note}</p>
                         <p className="text-xs text-gray-500 flex items-center gap-1">
-                          <span>{categoryInfo.icon}</span>
-                          <span>{categoryInfo.label}</span>
+                          <span>{cat.icon}</span>
+                          <span>{cat.label}</span>
                         </p>
                       </div>
 
@@ -77,7 +122,7 @@ export default function History() {
                               : "text-red-600"
                           }`}
                         >
-                          {t.type === "income" ? "+" : "-"}₹{t.amount}
+                          {t.type === "income" ? "+" : "-"}${t.amount}
                         </p>
 
                         <button
@@ -103,7 +148,6 @@ export default function History() {
         )}
       </div>
 
-      {/* Edit Modal */}
       <EditTransactionModal item={editItem} setItem={setEditItem} />
     </PageWrapper>
   );
