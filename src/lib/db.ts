@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import {
-  initializeFirestore,
+  getFirestore,
   collection,
   addDoc,
   onSnapshot,
@@ -29,16 +29,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 // ---------------------------------------------
-// SECURE FIRESTORE INSTANCE WITH SECRET HEADER
+// CORRECT FIRESTORE INSTANCE (NO CUSTOM HEADERS)
 // ---------------------------------------------
-export const db = initializeFirestore(app, {
-  ignoreUndefinedProperties: true,
-  experimentalForceLongPolling: false,
-  experimentalAutoDetectLongPolling: true,
-  headers: {
-    "X-App-Secret": "dak_secret_2025"   // ⭐ SECRET ONLY YOUR APP KNOWS
-  }
-});
+export const db = getFirestore(app);
 
 // ---------------------------------------------
 // TYPES
@@ -49,7 +42,7 @@ export interface Transaction {
   note: string;
   type: "income" | "expense";
   category: string;
-  date: any; // Firestore Timestamp
+  date: any;
 }
 
 // ---------------------------------------------
@@ -59,7 +52,7 @@ export async function addTransaction(data: Omit<Transaction, "id">) {
   const ref = collection(db, "transactions");
   await addDoc(ref, {
     ...data,
-    date: serverTimestamp(),  // always save proper Firestore timestamp
+    date: serverTimestamp(),
   });
 }
 
