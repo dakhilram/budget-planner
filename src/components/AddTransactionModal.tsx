@@ -1,58 +1,51 @@
 import { useState, useEffect } from "react";
 import { addTransaction } from "@/lib/db";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { serverTimestamp } from "firebase/firestore";
-
-const expenseCategories = [
-  "Food",
-  "Transport",
-  "Shopping",
-  "Bills",
-  "Entertainment",
-  "Other",
-];
-
-const incomeCategories = [
-  "Salary",
-  "Business",
-  "Freelancing",
-  "Gift",
-  "Other",
-];
+import { categories } from "@/lib/categories";
 
 export default function AddTransactionModal({ open, setOpen }) {
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [type, setType] = useState("expense");
-  const [category, setCategory] = useState("Other");
+  const [category, setCategory] = useState("other");
 
-  const categories = type === "expense" ? expenseCategories : incomeCategories;
-
-  // 🧹 Reset form when modal closes
+  // Reset form when closed
   useEffect(() => {
     if (!open) {
       setAmount("");
       setNote("");
       setType("expense");
-      setCategory("Other");
+      setCategory("other");
     }
   }, [open]);
 
-  // ➕ Add transaction
   const handleAdd = async () => {
-    if (!amount || !category) return;
+    if (!amount) return;
 
     await addTransaction({
       amount: parseFloat(amount),
       note,
       type,
       category,
-      date: serverTimestamp(), // 🔥 FIXED (Firestore timestamp)
+      date: serverTimestamp(),
     });
 
-    setOpen(false); // close modal
+    setOpen(false);
   };
+
+  // Filter categories:
+  // Income → only "salary" + "other"
+  // Expense → everything except "salary"
+  const filteredCategories = categories.filter((c) =>
+    type === "income" ? c.id === "salary" || c.id === "other" : c.id !== "salary"
+  );
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -62,7 +55,6 @@ export default function AddTransactionModal({ open, setOpen }) {
         </DialogHeader>
 
         <div className="space-y-3">
-
           {/* Amount */}
           <input
             type="number"
@@ -85,7 +77,10 @@ export default function AddTransactionModal({ open, setOpen }) {
           <select
             className="w-full border rounded-lg p-3"
             value={type}
-            onChange={(e) => setType(e.target.value)}
+            onChange={(e) => {
+              setType(e.target.value);
+              setCategory("other");
+            }}
           >
             <option value="expense">Expense</option>
             <option value="income">Income</option>
@@ -97,9 +92,9 @@ export default function AddTransactionModal({ open, setOpen }) {
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           >
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
+            {filteredCategories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.icon} {c.label}
               </option>
             ))}
           </select>

@@ -3,10 +3,16 @@ import { listenToTransactions, Transaction, deleteTransaction } from "@/lib/db";
 import PageWrapper from "@/components/PageWrapper";
 import EditTransactionModal from "@/components/EditTransactionModal";
 import { Pencil, Trash2 } from "lucide-react";
+import { categories } from "@/lib/categories";
 
 const normalizeDate = (t: Transaction) => {
   if (t.date?.seconds) return new Date(t.date.seconds * 1000);
   return new Date(t.date);
+};
+
+// Helper: match category id → icon + label
+const getCategoryInfo = (id: string) => {
+  return categories.find((c) => c.id === id) || { icon: "", label: id };
 };
 
 export default function History() {
@@ -47,41 +53,50 @@ export default function History() {
               <h2 className="text-gray-700 font-semibold mb-2">{date}</h2>
 
               <div className="space-y-2">
-                {grouped[date].map((t) => (
-                  <div
-                    key={t.id}
-                    className="flex items-center justify-between bg-white border rounded-xl p-3 shadow-sm"
-                  >
-                    <div>
-                      <p className="font-medium">{t.note}</p>
-                      <p className="text-xs text-gray-500">{t.category}</p>
+                {grouped[date].map((t) => {
+                  const categoryInfo = getCategoryInfo(t.category);
+
+                  return (
+                    <div
+                      key={t.id}
+                      className="flex items-center justify-between bg-white border rounded-xl p-3 shadow-sm"
+                    >
+                      <div>
+                        <p className="font-medium">{t.note}</p>
+                        <p className="text-xs text-gray-500 flex items-center gap-1">
+                          <span>{categoryInfo.icon}</span>
+                          <span>{categoryInfo.label}</span>
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <p
+                          className={`font-semibold ${
+                            t.type === "income"
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }`}
+                        >
+                          {t.type === "income" ? "+" : "-"}₹{t.amount}
+                        </p>
+
+                        <button
+                          onClick={() => setEditItem(t)}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          <Pencil size={18} />
+                        </button>
+
+                        <button
+                          onClick={() => deleteTransaction(t.id)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
                     </div>
-
-                    <div className="flex items-center gap-3">
-                      <p
-                        className={`font-semibold ${
-                          t.type === "income" ? "text-green-600" : "text-red-600"
-                        }`}
-                      >
-                        {t.type === "income" ? "+" : "-"}₹{t.amount}
-                      </p>
-
-                      <button
-                        onClick={() => setEditItem(t)}
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        <Pencil size={18} />
-                      </button>
-
-                      <button
-                        onClick={() => deleteTransaction(t.id)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))
