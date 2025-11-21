@@ -36,13 +36,20 @@ export default function EditTransactionModal({ item, setItem }: Props) {
   const handleUpdate = async () => {
     if (!item) return;
 
-    await updateTransaction(item.id, {
+    const data: any = {
       amount: parseFloat(amount),
       note,
       type,
-      category: type === "safedrop" ? undefined : category,
-    });
+    };
 
+    // category only for non-safedrop
+    if (type !== "safedrop") {
+      data.category = category;
+    } else {
+      data.category = null; // Firestore-safe
+    }
+
+    await updateTransaction(item.id, data);
     setItem(null);
   };
 
@@ -89,7 +96,6 @@ export default function EditTransactionModal({ item, setItem }: Props) {
             </select>
           </div>
 
-          {/* Category Hidden for SafeDrop */}
           {type !== "safedrop" && (
             <div>
               <Label>Category</Label>

@@ -29,21 +29,24 @@ export default function AddTransactionModal({ open, setOpen }) {
   const handleAdd = async () => {
     if (!amount) return;
 
-    await addTransaction({
+    // Build Firestore-safe object (no undefined fields!)
+    const data: any = {
       amount: parseFloat(amount),
       note,
       type,
-      // category only if not safedrop
-      category: type === "safedrop" ? undefined : category,
       date: serverTimestamp(),
-    });
+    };
 
+    // Only add category for non-safedrop
+    if (type !== "safedrop") {
+      data.category = category;
+    }
+
+    await addTransaction(data);
     setOpen(false);
   };
 
   // Filter categories:
-  // Income → only "salary" + "other"
-  // Expense → everything except "salary"
   const filteredCategories = categories.filter((c) =>
     type === "income"
       ? c.id === "salary" || c.id === "other"
@@ -60,7 +63,6 @@ export default function AddTransactionModal({ open, setOpen }) {
         </DialogHeader>
 
         <div className="space-y-3">
-          {/* Amount */}
           <input
             type="number"
             placeholder="0.00"
@@ -69,7 +71,6 @@ export default function AddTransactionModal({ open, setOpen }) {
             onChange={(e) => setAmount(e.target.value)}
           />
 
-          {/* Note */}
           <input
             type="text"
             placeholder={
@@ -82,7 +83,6 @@ export default function AddTransactionModal({ open, setOpen }) {
             onChange={(e) => setNote(e.target.value)}
           />
 
-          {/* Type */}
           <select
             className="w-full border rounded-lg p-3"
             value={type}
@@ -96,7 +96,6 @@ export default function AddTransactionModal({ open, setOpen }) {
             <option value="safedrop">SafeDrop (Deposit)</option>
           </select>
 
-          {/* Category -> hidden for SafeDrop */}
           {type !== "safedrop" && (
             <select
               className="w-full border rounded-lg p-3"
