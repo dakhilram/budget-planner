@@ -26,7 +26,15 @@ export default function MonthlySummary() {
   normalized.forEach((t) => {
     const d = t.dateObj;
     const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
-    const value = t.type === "income" ? t.amount : -t.amount;
+
+    // -----------------------------
+    // UPDATED SAFE DROP HANDLING
+    // -----------------------------
+    let value = 0;
+    if (t.type === "income") value = t.amount;
+    else if (t.type === "expense") value = -t.amount;
+    else if (t.type === "safedrop") value = -t.amount; // NEW
+
     monthlyTotals[key] = (monthlyTotals[key] || 0) + value;
   });
 
@@ -56,9 +64,7 @@ export default function MonthlySummary() {
                     key={label}
                     className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border"
                   >
-                    <p className="font-medium">
-                      {label.replace("-", "/")}
-                    </p>
+                    <p className="font-medium">{label.replace("-", "/")}</p>
 
                     <p
                       className={`font-semibold ${

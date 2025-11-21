@@ -33,7 +33,8 @@ export default function AddTransactionModal({ open, setOpen }) {
       amount: parseFloat(amount),
       note,
       type,
-      category,
+      // category only if not safedrop
+      category: type === "safedrop" ? undefined : category,
       date: serverTimestamp(),
     });
 
@@ -44,7 +45,11 @@ export default function AddTransactionModal({ open, setOpen }) {
   // Income → only "salary" + "other"
   // Expense → everything except "salary"
   const filteredCategories = categories.filter((c) =>
-    type === "income" ? c.id === "salary" || c.id === "other" : c.id !== "salary"
+    type === "income"
+      ? c.id === "salary" || c.id === "other"
+      : type === "expense"
+      ? c.id !== "salary"
+      : false
   );
 
   return (
@@ -67,7 +72,11 @@ export default function AddTransactionModal({ open, setOpen }) {
           {/* Note */}
           <input
             type="text"
-            placeholder="Groceries, Rent, Salary…"
+            placeholder={
+              type === "safedrop"
+                ? "Bank deposit note (optional)"
+                : "Groceries, Rent, Salary…"
+            }
             className="w-full border rounded-lg p-3"
             value={note}
             onChange={(e) => setNote(e.target.value)}
@@ -84,20 +93,23 @@ export default function AddTransactionModal({ open, setOpen }) {
           >
             <option value="expense">Expense</option>
             <option value="income">Income</option>
+            <option value="safedrop">SafeDrop (Deposit)</option>
           </select>
 
-          {/* Category */}
-          <select
-            className="w-full border rounded-lg p-3"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          >
-            {filteredCategories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.icon} {c.label}
-              </option>
-            ))}
-          </select>
+          {/* Category -> hidden for SafeDrop */}
+          {type !== "safedrop" && (
+            <select
+              className="w-full border rounded-lg p-3"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            >
+              {filteredCategories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.icon} {c.label}
+                </option>
+              ))}
+            </select>
+          )}
 
           <Button className="w-full" onClick={handleAdd}>
             Add

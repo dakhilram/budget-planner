@@ -29,7 +29,7 @@ export default function EditTransactionModal({ item, setItem }: Props) {
       setAmount(String(item.amount));
       setNote(item.note);
       setType(item.type);
-      setCategory(item.category);
+      setCategory(item.category ?? "other");
     }
   }, [item]);
 
@@ -40,7 +40,7 @@ export default function EditTransactionModal({ item, setItem }: Props) {
       amount: parseFloat(amount),
       note,
       type,
-      category,
+      category: type === "safedrop" ? undefined : category,
     });
 
     setItem(null);
@@ -66,6 +66,11 @@ export default function EditTransactionModal({ item, setItem }: Props) {
           <div>
             <Label>Note</Label>
             <Input
+              placeholder={
+                type === "safedrop"
+                  ? "Bank deposit note (optional)"
+                  : "Description..."
+              }
               value={note}
               onChange={(e) => setNote(e.target.value)}
             />
@@ -80,23 +85,27 @@ export default function EditTransactionModal({ item, setItem }: Props) {
             >
               <option value="expense">Expense</option>
               <option value="income">Income</option>
+              <option value="safedrop">SafeDrop (Deposit)</option>
             </select>
           </div>
 
-          <div>
-            <Label>Category</Label>
-            <select
-              className="border rounded p-2 w-full"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            >
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.icon} {c.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Category Hidden for SafeDrop */}
+          {type !== "safedrop" && (
+            <div>
+              <Label>Category</Label>
+              <select
+                className="border rounded p-2 w-full"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+              >
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.icon} {c.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <Button onClick={handleUpdate} className="w-full">
             Save Changes

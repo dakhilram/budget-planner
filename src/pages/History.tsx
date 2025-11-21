@@ -108,10 +108,21 @@ export default function History() {
                     >
                       <div>
                         <p className="font-medium">{t.note}</p>
-                        <p className="text-xs text-gray-500 flex items-center gap-1">
-                          <span>{cat.icon}</span>
-                          <span>{cat.label}</span>
-                        </p>
+
+                        {/* Category (hidden for SafeDrop) */}
+                        {t.type !== "safedrop" && (
+                          <p className="text-xs text-gray-500 flex items-center gap-1">
+                            <span>{cat.icon}</span>
+                            <span>{cat.label}</span>
+                          </p>
+                        )}
+
+                        {/* SafeDrop Label */}
+                        {t.type === "safedrop" && (
+                          <p className="text-xs text-blue-600 font-semibold">
+                            SafeDrop
+                          </p>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-3">
@@ -119,7 +130,9 @@ export default function History() {
                           className={`font-semibold ${
                             t.type === "income"
                               ? "text-green-600"
-                              : "text-red-600"
+                              : t.type === "expense"
+                              ? "text-red-600"
+                              : "text-blue-600" // SafeDrop
                           }`}
                         >
                           {t.type === "income" ? "+" : "-"}${t.amount}

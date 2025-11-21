@@ -24,6 +24,9 @@ export default function Dashboard() {
     dateObj: normalizeDate(t),
   }));
 
+  // ---------------------------
+  // SAFE DROP: NEW CALC LOGIC
+  // ---------------------------
   const totalIncome = normalized
     .filter((x) => x.type === "income")
     .reduce((s, x) => s + x.amount, 0);
@@ -32,14 +35,21 @@ export default function Dashboard() {
     .filter((x) => x.type === "expense")
     .reduce((s, x) => s + x.amount, 0);
 
-  const balance = totalIncome - totalExpense;
+  // NEW
+  const totalSafeDrop = normalized
+    .filter((x) => x.type === "safedrop")
+    .reduce((s, x) => s + x.amount, 0);
+
+  // UPDATED BALANCE CALC
+  const balance = totalIncome - totalExpense - totalSafeDrop;
   const hasData = normalized.length > 0;
 
   // Trend message
   let trendMsg = "Add your first transaction";
   if (hasData) {
     if (balance > 0) trendMsg = "You’re saving money — great job!";
-    else if (balance < 0) trendMsg = "Spending more than earning. Review expenses.";
+    else if (balance < 0)
+      trendMsg = "Spending more than earning. Review expenses.";
     else trendMsg = "Balanced month — keep tracking.";
   }
 
@@ -56,15 +66,28 @@ export default function Dashboard() {
           <p className="text-sm mt-2 opacity-90">{trendMsg}</p>
         </div>
 
-        {/* Income Expense Cards */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* Income Expense + SafeDrop Cards */}
+        <div className="grid grid-cols-3 gap-4">
           <div className="p-4 rounded-2xl shadow-sm border border-green-200 bg-green-50">
-            <p className="text-sm text-green-700">Total Income</p>
-            <p className="text-2xl font-bold text-green-600">$ {totalIncome.toFixed(2)}</p>
+            <p className="text-sm text-green-700">Income</p>
+            <p className="text-2xl font-bold text-green-600">
+              $ {totalIncome.toFixed(2)}
+            </p>
           </div>
+
           <div className="p-4 rounded-2xl shadow-sm border border-red-200 bg-red-50">
-            <p className="text-sm text-red-700">Total Expense</p>
-            <p className="text-2xl font-bold text-red-600">$ {totalExpense.toFixed(2)}</p>
+            <p className="text-sm text-red-700">Expenses</p>
+            <p className="text-2xl font-bold text-red-600">
+              $ {totalExpense.toFixed(2)}
+            </p>
+          </div>
+
+          {/* NEW: SAFEDROP CARD */}
+          <div className="p-4 rounded-2xl shadow-sm border border-blue-200 bg-blue-50">
+            <p className="text-sm text-blue-700">SafeDrop</p>
+            <p className="text-2xl font-bold text-blue-600">
+              $ {totalSafeDrop.toFixed(2)}
+            </p>
           </div>
         </div>
 
@@ -99,9 +122,15 @@ export default function Dashboard() {
                       {t.dateObj.toLocaleDateString()}
                     </p>
                   </div>
+
+                  {/* NEW COLOR LOGIC FOR SAFEDROP */}
                   <p
                     className={`font-semibold ${
-                      t.type === "income" ? "text-green-600" : "text-red-600"
+                      t.type === "income"
+                        ? "text-green-600"
+                        : t.type === "expense"
+                        ? "text-red-600"
+                        : "text-blue-600"
                     }`}
                   >
                     {t.type === "income" ? "+" : "-"}${t.amount}

@@ -40,8 +40,8 @@ export interface Transaction {
   id: string;
   amount: number;
   note: string;
-  type: "income" | "expense";
-  category: string;
+  type: "income" | "expense" | "safedrop";
+  category?: string;
   date: any;
 }
 
