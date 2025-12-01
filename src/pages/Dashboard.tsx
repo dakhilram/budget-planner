@@ -102,6 +102,7 @@ export default function Dashboard() {
   return (
     <PageWrapper>
       <div className="p-4 pb-24 space-y-6">
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         {/* ------------------------------------------------------ */}
         {/* AVAILABLE BALANCE CARD */}
         {/* ------------------------------------------------------ */}
