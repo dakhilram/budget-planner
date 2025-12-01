@@ -4,14 +4,16 @@ import PageWrapper from "@/components/PageWrapper";
 import EditTransactionModal from "@/components/EditTransactionModal";
 import { Pencil, Trash2 } from "lucide-react";
 import { categories } from "@/lib/categories";
+import CategoryPieChart from "@/components/charts/CategoryPieChart";
 
 const normalizeDate = (t: Transaction) => {
   if (t.date?.seconds) return new Date(t.date.seconds * 1000);
   return new Date(t.date);
 };
 
-// Helper: category info
-const getCategoryInfo = (id: string) => {
+// Helper: category info (never returns undefined)
+const getCategoryInfo = (id: string | undefined) => {
+  if (!id) return { icon: "", label: "Unknown" };
   return categories.find((c) => c.id === id) || { icon: "", label: id };
 };
 
@@ -55,6 +57,17 @@ export default function History() {
     return key === selectedMonth;
   });
 
+  // ----- CATEGORY EXPENSE SUMMARY (ONLY EXPENSES, NO SAFEDROP) -----
+  const categoryTotals: Record<string, number> = {};
+
+  filtered
+    .filter((t) => t.type === "expense") // only expenses
+    .forEach((t) => {
+      const cat = t.category ?? "unknown"; // safe fallback
+      if (!categoryTotals[cat]) categoryTotals[cat] = 0;
+      categoryTotals[cat] += t.amount;
+    });
+
   // ----- GROUP DAILY -----
   const grouped: Record<string, Transaction[]> = {};
   for (const t of filtered) {
@@ -89,6 +102,13 @@ export default function History() {
             );
           })}
         </select>
+
+        {/* Category Pie Chart (Expenses Only) */}
+        {Object.keys(categoryTotals).length > 0 ? (
+          <CategoryPieChart data={categoryTotals} />
+        ) : (
+          <p className="text-gray-500">No expense data for this month</p>
+        )}
 
         {sortedDates.length === 0 ? (
           <p className="text-gray-500">No transactions for this month</p>
