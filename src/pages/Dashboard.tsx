@@ -70,8 +70,13 @@ export default function Dashboard() {
     .filter((t) => t.type === "expense")
     .reduce((s, t) => s + t.amount, 0);
 
+  const safedropAllocated = normalized
+  .filter((t) => t.type === "safedrop" && t.amount > 0)
+  .reduce((s, t) => s + t.amount, 0);
+
   const availableBalance =
-    lifetimeIncome - lifetimeExpense - totalSafeDrop;
+  lifetimeIncome - lifetimeExpense - safedropAllocated;
+
 
   // Trend message
   const hasData = normalized.length > 0;
