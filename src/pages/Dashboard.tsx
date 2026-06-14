@@ -124,7 +124,7 @@ export default function Dashboard() {
       type: "safedrop",
       note:
         transferType === "income"
-          ? "SafeDrop moved to me / bank account"
+          ? "SafeDrop moved to me"
           : "SafeDrop used for direct payment",
       category: "safedrop",
       date: new Date(),
