@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { listenToTransactions, Transaction } from "@/lib/db";
 import PageWrapper from "@/components/PageWrapper";
-import TrendLineChart from "@/components/charts/TrendLineChart";
+import NetMonthlyBarChart from "@/components/charts/NetMonthlyBarChart";
 
 const normalizeDate = (t: Transaction) => {
   if (t.date?.seconds) return new Date(t.date.seconds * 1000);
@@ -21,6 +21,16 @@ const formatMonthLabel = (key: string) => {
   return date.toLocaleDateString("en-US", {
     month: "long",
     year: "numeric",
+  });
+};
+
+const formatShortMonthLabel = (key: string) => {
+  const [year, month] = key.split("-");
+  const date = new Date(Number(year), Number(month) - 1);
+
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    year: "2-digit",
   });
 };
 
@@ -91,26 +101,41 @@ export default function MonthlySummary() {
     month.net = month.income - month.expenses - month.safedropSaved;
   });
 
-  const labels = Object.keys(monthlyTotals).sort();
-  const chartLabels = labels.map(formatMonthLabel);
-  const chartValues = labels.map((key) => monthlyTotals[key].net);
+  const labelsAsc = Object.keys(monthlyTotals).sort();
+  const labelsDesc = [...labelsAsc].reverse();
+
+  // Chart shows latest 6 months, left-to-right from older to newer.
+  const latestChartKeys = labelsDesc.slice(0, 6).reverse();
+
+  const chartLabels = latestChartKeys.map(formatShortMonthLabel);
+  const chartValues = latestChartKeys.map((key) => monthlyTotals[key].net);
 
   return (
     <PageWrapper>
       <div className="p-4 pb-24 space-y-6">
         <h1 className="text-2xl font-bold">Monthly Summary</h1>
 
-        {labels.length === 0 ? (
+        {labelsAsc.length === 0 ? (
           <p className="text-gray-500">No data yet</p>
         ) : (
           <>
             <div className="p-4 bg-white rounded-xl shadow-sm">
-              <h2 className="font-semibold mb-2">Net Trend</h2>
-              <TrendLineChart labels={chartLabels} dataPoints={chartValues} />
+              <div className="mb-4">
+                <h2 className="font-semibold">Latest Monthly Net</h2>
+                <p className="text-sm text-gray-500">
+                  Green means you kept money. Red means you spent more than you
+                  brought in.
+                </p>
+              </div>
+
+              <NetMonthlyBarChart
+                labels={chartLabels}
+                dataPoints={chartValues}
+              />
             </div>
 
             <div className="space-y-4">
-              {labels.map((key) => {
+              {labelsDesc.map((key) => {
                 const month = monthlyTotals[key];
 
                 return (
