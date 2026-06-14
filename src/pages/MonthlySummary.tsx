@@ -8,6 +8,34 @@ const normalizeDate = (t: Transaction) => {
   return new Date(t.date);
 };
 
+const getMonthKey = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+};
+
+const formatMonthLabel = (key: string) => {
+  const [year, month] = key.split("-");
+  const date = new Date(Number(year), Number(month) - 1);
+
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+};
+
+const formatMoney = (value: number) => {
+  return `$${Math.abs(value).toFixed(2)}`;
+};
+
+type MonthlyData = {
+  income: number;
+  expenses: number;
+  safedropSaved: number;
+  safedropWithdrawn: number;
+  net: number;
+};
+
 export default function MonthlySummary() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
@@ -18,28 +46,54 @@ export default function MonthlySummary() {
 
   const normalized = transactions.map((t) => ({
     ...t,
+    amount: Number(t.amount) || 0,
     dateObj: normalizeDate(t),
   }));
 
-  // Group by month-year
-  const monthlyTotals: Record<string, number> = {};
+  const monthlyTotals: Record<string, MonthlyData> = {};
+
   normalized.forEach((t) => {
-    const d = t.dateObj;
-    const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+    const key = getMonthKey(t.dateObj);
 
-    // -----------------------------
-    // UPDATED SAFE DROP HANDLING
-    // -----------------------------
-    let value = 0;
-    if (t.type === "income") value = t.amount;
-    else if (t.type === "expense") value = -t.amount;
-    else if (t.type === "safedrop") value = -t.amount; // NEW
+    if (!monthlyTotals[key]) {
+      monthlyTotals[key] = {
+        income: 0,
+        expenses: 0,
+        safedropSaved: 0,
+        safedropWithdrawn: 0,
+        net: 0,
+      };
+    }
 
-    monthlyTotals[key] = (monthlyTotals[key] || 0) + value;
+    if (t.type === "income") {
+      monthlyTotals[key].income += Math.abs(t.amount);
+    }
+
+    if (t.type === "expense") {
+      monthlyTotals[key].expenses += Math.abs(t.amount);
+    }
+
+    if (t.type === "safedrop" && t.amount > 0) {
+      monthlyTotals[key].safedropSaved += Math.abs(t.amount);
+    }
+
+    if (t.type === "safedrop" && t.amount < 0) {
+      monthlyTotals[key].safedropWithdrawn += Math.abs(t.amount);
+    }
+  });
+
+  Object.keys(monthlyTotals).forEach((key) => {
+    const month = monthlyTotals[key];
+
+    // Net available movement for the month.
+    // SafeDrop withdrawals are not added here because they already become
+    // either income or expense through the paired transaction.
+    month.net = month.income - month.expenses - month.safedropSaved;
   });
 
   const labels = Object.keys(monthlyTotals).sort();
-  const values = labels.map((k) => monthlyTotals[k]);
+  const chartLabels = labels.map(formatMonthLabel);
+  const chartValues = labels.map((key) => monthlyTotals[key].net);
 
   return (
     <PageWrapper>
@@ -51,31 +105,61 @@ export default function MonthlySummary() {
         ) : (
           <>
             <div className="p-4 bg-white rounded-xl shadow-sm">
-              <h2 className="font-semibold mb-2">Trend</h2>
-              <TrendLineChart dataPoints={values} />
+              <h2 className="font-semibold mb-2">Net Trend</h2>
+              <TrendLineChart labels={chartLabels} dataPoints={chartValues} />
             </div>
 
-            <div className="p-4 bg-white rounded-xl shadow-sm">
-              <h2 className="font-semibold mb-2">Net Balance Per Month</h2>
+            <div className="space-y-4">
+              {labels.map((key) => {
+                const month = monthlyTotals[key];
 
-              <ul className="space-y-2">
-                {labels.map((label, idx) => (
-                  <li
-                    key={label}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border"
-                  >
-                    <p className="font-medium">{label.replace("-", "/")}</p>
+                return (
+                  <div key={key} className="p-4 bg-white rounded-xl shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="font-semibold">{formatMonthLabel(key)}</h2>
 
-                    <p
-                      className={`font-semibold ${
-                        values[idx] >= 0 ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      $ {values[idx].toFixed(2)}
-                    </p>
-                  </li>
-                ))}
-              </ul>
+                      <p
+                        className={`font-bold ${
+                          month.net >= 0 ? "text-green-600" : "text-red-600"
+                        }`}
+                      >
+                        {month.net >= 0 ? "+" : "-"}
+                        {formatMoney(month.net)}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="p-3 bg-green-50 rounded-xl">
+                        <p className="text-gray-500">Income</p>
+                        <p className="font-semibold text-green-600">
+                          +{formatMoney(month.income)}
+                        </p>
+                      </div>
+
+                      <div className="p-3 bg-red-50 rounded-xl">
+                        <p className="text-gray-500">Expenses</p>
+                        <p className="font-semibold text-red-600">
+                          -{formatMoney(month.expenses)}
+                        </p>
+                      </div>
+
+                      <div className="p-3 bg-blue-50 rounded-xl">
+                        <p className="text-gray-500">SafeDrop Saved</p>
+                        <p className="font-semibold text-blue-600">
+                          -{formatMoney(month.safedropSaved)}
+                        </p>
+                      </div>
+
+                      <div className="p-3 bg-purple-50 rounded-xl">
+                        <p className="text-gray-500">SafeDrop Withdrawn</p>
+                        <p className="font-semibold text-purple-600">
+                          {formatMoney(month.safedropWithdrawn)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </>
         )}

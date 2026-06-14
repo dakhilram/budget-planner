@@ -5,7 +5,7 @@ import {
   CategoryScale,
   LinearScale,
   Tooltip,
-  Legend
+  Legend,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 
@@ -18,14 +18,20 @@ ChartJS.register(
   Legend
 );
 
-export default function TrendLineChart({ dataPoints }: { dataPoints: number[] }) {
-  const labels = dataPoints.map((_, idx) => `Day ${idx + 1}`);
+type TrendLineChartProps = {
+  labels: string[];
+  dataPoints: number[];
+};
 
+export default function TrendLineChart({
+  labels,
+  dataPoints,
+}: TrendLineChartProps) {
   const data = {
     labels,
     datasets: [
       {
-        label: "Trend",
+        label: "Net Balance",
         data: dataPoints,
         borderColor: "#3b82f6",
         backgroundColor: "rgba(59, 130, 246, 0.2)",
