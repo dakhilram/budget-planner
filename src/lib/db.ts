@@ -42,6 +42,7 @@ export interface Transaction {
   note: string;
   type: "income" | "expense" | "safedrop";
   category?: string;
+  source?: "safedrop";
   date: any;
 }
 

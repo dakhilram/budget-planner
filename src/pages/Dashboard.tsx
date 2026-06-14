@@ -17,6 +17,14 @@ export default function Dashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  const [showSafeDropModal, setShowSafeDropModal] = useState(false);
+  const [transferAmount, setTransferAmount] = useState("");
+  const [transferType, setTransferType] = useState<"income" | "expense">("income");
+  const [transferNote, setTransferNote] = useState("");
+  const [transferError, setTransferError] = useState("");
+
+
+
   useEffect(() => {
     const stop = listenToTransactions(setTransactions);
     return () => stop();
@@ -71,11 +79,15 @@ export default function Dashboard() {
     .reduce((s, t) => s + t.amount, 0);
 
   const safedropAllocated = normalized
-  .filter((t) => t.type === "safedrop" && t.amount > 0)
-  .reduce((s, t) => s + t.amount, 0);
+    .filter((t) => t.type === "safedrop" && t.amount > 0)
+    .reduce((s, t) => s + t.amount, 0);
+
+  const safedropFundedExpenses = normalized
+    .filter((t) => t.type === "expense" && t.source === "safedrop")
+    .reduce((s, t) => s + t.amount, 0);
 
   const availableBalance =
-  lifetimeIncome - lifetimeExpense - safedropAllocated;
+    lifetimeIncome - lifetimeExpense - safedropAllocated + safedropFundedExpenses;
 
 
   // Trend message
@@ -92,16 +104,50 @@ export default function Dashboard() {
   // --------------------------------------------------------------
   // SEND TO BANK — clears SafeDrop without altering balance
   // --------------------------------------------------------------
-  const handleSendToBank = async () => {
-    if (totalSafeDrop <= 0) return;
+  const handleSafeDropTransfer = async () => {
+    const value = Number(transferAmount);
+
+    if (!Number.isFinite(value) || value <= 0) {
+      setTransferError("Enter a valid amount.");
+      return;
+    }
+
+    if (value > totalSafeDrop) {
+      setTransferError("You cannot transfer more than your SafeDrop balance.");
+      return;
+    }
+
+    const cleanNote = transferNote.trim();
+
     await addTransaction({
-      amount: -totalSafeDrop,
+      amount: -value,
       type: "safedrop",
-      note: "SafeDrop transferred to bank",
+      note:
+        transferType === "income"
+          ? "SafeDrop moved to bank"
+          : "SafeDrop used for direct payment",
       category: "safedrop",
       date: new Date(),
     });
-    setShowConfirm(false);
+
+    await addTransaction({
+      amount: value,
+      type: transferType,
+      note:
+        cleanNote ||
+        (transferType === "income"
+          ? "SafeDrop income"
+          : "SafeDrop direct expense"),
+      category: "other",
+      source: "safedrop",
+      date: new Date(),
+    });
+
+    setTransferAmount("");
+    setTransferType("income");
+    setTransferNote("");
+    setTransferError("");
+    setShowSafeDropModal(false);
   };
 
   return (
@@ -158,28 +204,72 @@ export default function Dashboard() {
         {/* ------------------------------------------------------ */}
         {/* CONFIRMATION MODAL */}
         {/* ------------------------------------------------------ */}
-        {showConfirm && (
+        {showSafeDropModal && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-2xl shadow-xl w-80 text-center space-y-4">
-              <h2 className="text-lg font-bold">Confirm Transfer</h2>
-              <p className="text-gray-600">
-                Are you sure you want to send your SafeDrop balance to
-                the bank?
-              </p>
+            <div className="bg-white p-6 rounded-2xl shadow-xl w-80 space-y-4">
+              <div className="text-center">
+                <h2 className="text-lg font-bold">Send from SafeDrop</h2>
+                <p className="text-gray-600 text-sm mt-1">
+                  Available SafeDrop: ${totalSafeDrop.toFixed(2)}
+                </p>
+              </div>
+
+              <input
+                type="number"
+                placeholder="Amount"
+                className="w-full border rounded-lg p-3"
+                value={transferAmount}
+                onChange={(e) => {
+                  setTransferAmount(e.target.value);
+                  setTransferError("");
+                }}
+              />
+
+              <select
+                className="w-full border rounded-lg p-3"
+                value={transferType}
+                onChange={(e) =>
+                  setTransferType(e.target.value as "income" | "expense")
+                }
+              >
+                <option value="income">To me / bank account — Income</option>
+                <option value="expense">Direct payment to someone — Expense</option>
+              </select>
+
+              <input
+                type="text"
+                placeholder={
+                  transferType === "income"
+                    ? "Note, e.g. Moved to bank"
+                    : "Note, e.g. Paid rent to John"
+                }
+                className="w-full border rounded-lg p-3"
+                value={transferNote}
+                onChange={(e) => setTransferNote(e.target.value)}
+              />
+
+              {transferError && (
+                <p className="text-sm text-red-600">{transferError}</p>
+              )}
 
               <div className="flex justify-center gap-3">
                 <button
-                  onClick={() => setShowConfirm(false)}
+                  onClick={() => {
+                    setShowSafeDropModal(false);
+                    setTransferAmount("");
+                    setTransferNote("");
+                    setTransferError("");
+                  }}
                   className="px-4 py-2 rounded-xl bg-gray-200 hover:bg-gray-300"
                 >
                   Cancel
                 </button>
 
                 <button
-                  onClick={handleSendToBank}
+                  onClick={handleSafeDropTransfer}
                   className="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700"
                 >
-                  Yes, Send
+                  Send
                 </button>
               </div>
             </div>
@@ -230,15 +320,15 @@ export default function Dashboard() {
                   </div>
 
                   <p
-                    className={`font-semibold ${
-                      t.type === "income"
-                        ? "text-green-600"
-                        : t.type === "expense"
+                    className={`font-semibold ${t.type === "income"
+                      ? "text-green-600"
+                      : t.type === "expense"
                         ? "text-red-600"
                         : "text-blue-600"
-                    }`}
+                      }`}
                   >
-                    {t.type === "income" ? "+" : "-"}${t.amount}
+                    {t.type === "income" ? "+" : t.type === "expense" ? "-" : t.amount >= 0 ? "-" : "+"}
+                    ${Math.abs(t.amount).toFixed(2)}
                   </p>
                 </div>
               ))}
