@@ -124,7 +124,7 @@ export default function Dashboard() {
       type: "safedrop",
       note:
         transferType === "income"
-          ? "SafeDrop moved to bank"
+          ? "SafeDrop moved to me / bank account"
           : "SafeDrop used for direct payment",
       category: "safedrop",
       date: new Date(),
@@ -232,7 +232,7 @@ export default function Dashboard() {
                   setTransferType(e.target.value as "income" | "expense")
                 }
               >
-                <option value="income">To me / bank account — Income</option>
+                <option value="income">To me  — Income</option>
                 <option value="expense">Direct payment to someone — Expense</option>
               </select>
 
@@ -327,8 +327,7 @@ export default function Dashboard() {
                         : "text-blue-600"
                       }`}
                   >
-                    {t.type === "income" ? "+" : t.type === "expense" ? "-" : t.amount >= 0 ? "-" : "+"}
-                    ${Math.abs(t.amount).toFixed(2)}
+                    {t.type === "income" ? "+" : "-"}${Math.abs(t.amount).toFixed(2)}
                   </p>
                 </div>
               ))}
