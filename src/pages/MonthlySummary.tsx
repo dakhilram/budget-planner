@@ -121,10 +121,9 @@ export default function MonthlySummary() {
           <>
             <div className="p-4 bg-white rounded-xl shadow-sm">
               <div className="mb-4">
-                <h2 className="font-semibold">Latest Monthly Net</h2>
+                <h2 className="font-semibold">Monthly Cash Flow</h2>
                 <p className="text-sm text-gray-500">
-                  Green means you kept money. Red means you spent more than you
-                  brought in.
+                  Shows how much money was left after expenses and SafeDrop savings.
                 </p>
               </div>
 
@@ -176,7 +175,7 @@ export default function MonthlySummary() {
                       </div>
 
                       <div className="p-3 bg-purple-50 rounded-xl">
-                        <p className="text-gray-500">SafeDrop Withdrawn</p>
+                        <p className="text-gray-500">SafeDrop Used</p>
                         <p className="font-semibold text-purple-600">
                           {formatMoney(month.safedropWithdrawn)}
                         </p>
