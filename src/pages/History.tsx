@@ -155,7 +155,7 @@ export default function History() {
                               : "text-blue-600" // SafeDrop
                           }`}
                         >
-                          {t.type === "income" ? "+" : "-"}${t.amount}
+                          {t.type === "income" ? "+" : "-"}${Math.abs(t.amount).toFixed(2)}
                         </p>
 
                         <button
