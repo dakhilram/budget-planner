@@ -15,7 +15,7 @@ const normalizeDate = (t: Transaction) => {
 
 export default function Dashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [showConfirm, setShowConfirm] = useState(false);
+  //const [showConfirm, setShowConfirm] = useState(false);
 
   const [showSafeDropModal, setShowSafeDropModal] = useState(false);
   const [transferAmount, setTransferAmount] = useState("");
@@ -194,7 +194,7 @@ export default function Dashboard() {
           </p>
 
           <button
-            onClick={() => setShowConfirm(true)}
+            onClick={() => setShowSafeDropModal(true)}
             className="mt-3 bg-white text-blue-700 font-semibold px-4 py-2 rounded-xl shadow hover:bg-gray-100"
           >
             Send to Bank
